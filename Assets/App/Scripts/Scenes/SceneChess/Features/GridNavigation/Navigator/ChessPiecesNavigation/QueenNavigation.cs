@@ -8,7 +8,8 @@ namespace App.Scripts.Scenes.SceneChess.Features.GridNavigation.Navigator.ChessP
     public class QueenNavigation : ChessPieceNavigation
     {
         private readonly ChessGrid _grid;
-        private const float NeighbourCellDistance = 1.4f;
+        private const float NeighbourCellDistance = 1.6f;
+        private const float PriorityRatioForRemoteCells = 0.5f;
 
         public QueenNavigation(Vector2Int from, ChessGrid grid)
         {
@@ -36,8 +37,8 @@ namespace App.Scripts.Scenes.SceneChess.Features.GridNavigation.Navigator.ChessP
                             }
                             else
                             {
-                                Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(currentPosition)], Nodes[ConvertVectorPositionToSquareNum(newPosition)], NeighbourCellDistance));
-                                Nodes[ConvertVectorPositionToSquareNum(currentPosition)].Connect(Nodes[ConvertVectorPositionToSquareNum(newPosition)], NeighbourCellDistance);
+                                Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(currentPosition)], Nodes[ConvertVectorPositionToSquareNum(newPosition)], Vector2Int.Distance(currentPosition, startPosition)*PriorityRatioForRemoteCells));
+                                Nodes[ConvertVectorPositionToSquareNum(currentPosition)].Connect(Nodes[ConvertVectorPositionToSquareNum(newPosition)], Vector2Int.Distance(currentPosition, startPosition)*PriorityRatioForRemoteCells);
                             }
 
                             Debug.DrawLine(new Vector3(currentPosition.x + 0.5f, currentPosition.y + 0.5f), new Vector3(newPosition.x + 0.5f, newPosition.y + 0.5f), Color.magenta, 10, false);

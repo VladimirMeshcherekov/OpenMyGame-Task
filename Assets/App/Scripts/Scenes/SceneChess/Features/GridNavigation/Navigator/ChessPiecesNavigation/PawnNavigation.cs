@@ -7,50 +7,83 @@ namespace App.Scripts.Scenes.SceneChess.Features.GridNavigation.Navigator.ChessP
 {
     public class PawnNavigation : ChessPieceNavigation
     {
-        private readonly ChessGrid _grid;
+         private readonly ChessGrid _grid;
+       
+        private const int MaxRecursionSteps = 4;
 
         public PawnNavigation(Vector2Int from, ChessGrid grid)
         {
             _grid = grid;
             CreateGraph();
-            CreatePathGraph(from);
+            SetupPathGraph(from);
         }
-        
-        private void CreatePathGraph(Vector2Int startPosition)
+
+        private void SetupPathGraph(Vector2Int from)
         {
-            for (int y = 0; y < GridSize; y++)
+            CreatePathGraph(from, 0);
+        }
+
+        private void CreatePathGraph(Vector2Int startPoint, int recursionStep)
+        {
+            recursionStep++;
+            List<Vector2Int> availableMovePosition = AvailableUnitMovePosition(startPoint);
+
+            foreach (var position in availableMovePosition)
             {
-                for (int x = 0; x < GridSize; x++)
+                if (_grid.Get(position) == null)
                 {
-                    Vector2Int currentPosition = new Vector2Int(x, y);
-                    List<Vector2Int> availableMovePosition = GetAvailableMovePositions(new Vector2Int(x, y));
-                    foreach (var newPosition in availableMovePosition)
+                    if (Vector2Int.Distance(startPoint, position) <= 1.5f)
                     {
-                        if (IsMoveAvailable(newPosition, currentPosition, startPosition, _grid))
-                        {
-                            Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(currentPosition)], Nodes[ConvertVectorPositionToSquareNum(newPosition)]));
-                            Nodes[ConvertVectorPositionToSquareNum(currentPosition)].Connect(Nodes[ConvertVectorPositionToSquareNum(newPosition)]);
-                            
-                            Debug.DrawLine(new Vector3(currentPosition.x + 0.5f, currentPosition.y + 0.5f), new Vector3(newPosition.x + 0.5f, newPosition.y + 0.5f), Color.magenta, 10, false);
-                        }
+                        Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(startPoint)], Nodes[ConvertVectorPositionToSquareNum(position)]));
+                        Nodes[ConvertVectorPositionToSquareNum(startPoint)].Connect(Nodes[ConvertVectorPositionToSquareNum(position)]);
+
+                        Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(position)], Nodes[ConvertVectorPositionToSquareNum(startPoint)]));
+                        Nodes[ConvertVectorPositionToSquareNum(position)].Connect(Nodes[ConvertVectorPositionToSquareNum(startPoint)]);
                     }
+                    else
+                    {
+                        Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(startPoint)], Nodes[ConvertVectorPositionToSquareNum(position)], 1.1f));
+                        Nodes[ConvertVectorPositionToSquareNum(startPoint)].Connect(Nodes[ConvertVectorPositionToSquareNum(position)], 1.1f);
+
+                        Edges.Add(new Edge(Nodes[ConvertVectorPositionToSquareNum(position)], Nodes[ConvertVectorPositionToSquareNum(startPoint)], 1.1f));
+                        Nodes[ConvertVectorPositionToSquareNum(position)].Connect(Nodes[ConvertVectorPositionToSquareNum(startPoint)], 1.1f);
+                    }
+
+                    Debug.DrawLine(new Vector3(startPoint.x + 0.5f, startPoint.y + 0.5f),
+                        new Vector3(position.x + 0.5f, position.y + 0.5f), Color.magenta, 10, false);
+                }
+            }
+
+            if (recursionStep >= MaxRecursionSteps)
+            {
+                return;
+            }
+
+            foreach (var newPosition in availableMovePosition)
+            {
+                if (_grid.Get(newPosition) == null)
+                {
+                    int newRecursionStep = recursionStep;
+                    CreatePathGraph(newPosition, newRecursionStep);
                 }
             }
         }
 
-        private List<Vector2Int> GetAvailableMovePositions(Vector2Int startPoint)
+        private List<Vector2Int> AvailableUnitMovePosition(Vector2Int startPoint)
         {
-            List<Vector2Int> availableMovePositions = new List<Vector2Int>();
-            availableMovePositions.Add(new Vector2Int(startPoint.x, startPoint.y + 1));
+            List<Vector2Int> availableMovePosition = new List<Vector2Int>();
 
-            foreach (var position in availableMovePositions.ToArray())
+            availableMovePosition.Add(new Vector2Int(startPoint.x, startPoint.y + 1));
+
+            foreach (var position in availableMovePosition.ToArray())
             {
                 if (IsPieceInsideField(position) == false)
                 {
-                    availableMovePositions.Remove(position);
+                    availableMovePosition.Remove(position);
                 }
             }
-            return availableMovePositions;
+            return availableMovePosition;
         }
+        
     }
 }
